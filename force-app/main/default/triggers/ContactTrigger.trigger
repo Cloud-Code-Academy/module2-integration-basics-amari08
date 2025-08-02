@@ -16,7 +16,30 @@
  * 
  * Optional Challenge: Use a trigger handler class to implement the trigger logic.
  */
-trigger ContactTrigger on Contact(before insert) {
+trigger ContactTrigger on Contact(before insert, before update) {
+	for (Contact con : Trigger.new) {
+		if (con.DummyJSON_Id__c == null) {
+			// generate random number
+			Integer randomNumber = (Integer) (Math.random() * 101);
+			// set value of field
+			con.DummyJSON_Id__c = String.valueOf(randomNumber);
+		} else {
+			try {
+				// set id to integer;
+				Integer dummyJSONIdInt = Integer.valueOf(con.DummyJSON_Id__c);
+				if (dummyJSONIdInt <= 100) {
+					// call the GET asynchronously with future method
+					DummyJSONCallout.getDummyJSONUserFromIdFuture(con.DummyJSON_Id__c);
+				} else {
+					// call the POST asynchronously with future method
+					DummyJSONCallout.postCreateDummyJSONUserFuture(con.Id);
+				}
+			} catch (System.TypeException e) {
+				con.addError('Dummy JSON ID is not a valid number: ' + con.DummyJSON_Id__c);
+			}
+		}	
+	}
+}
 	// When a contact is inserted
 	// if DummyJSON_Id__c is null, generate a random number between 0 and 100 and set this as the contact's DummyJSON_Id__c value
 
@@ -25,4 +48,3 @@ trigger ContactTrigger on Contact(before insert) {
 
 	//When a contact is updated
 	// if DummyJSON_Id__c is greater than 100, call the postCreateDummyJSONUser API
-}
